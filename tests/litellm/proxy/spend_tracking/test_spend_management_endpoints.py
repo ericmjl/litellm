@@ -26,6 +26,11 @@ def client():
     return TestClient(app)
 
 
+@pytest.fixture(autouse=True)
+def add_anthropic_api_key_to_env(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-api03-1234567890")
+
+
 @pytest.mark.asyncio
 async def test_ui_view_spend_logs_with_user_id(client, monkeypatch):
     # Mock data for the test
@@ -416,7 +421,8 @@ class TestSpendLogsPayload:
         # litellm._turn_on_debug()
 
         with patch.object(
-            litellm.proxy.proxy_server, "_set_spend_logs_payload"
+            litellm.proxy.db.db_spend_update_writer.DBSpendUpdateWriter,
+            "_set_spend_logs_payload",
         ) as mock_client, patch.object(litellm.proxy.proxy_server, "prisma_client"):
             response = await litellm.acompletion(
                 model="gpt-4o",
@@ -500,7 +506,7 @@ class TestSpendLogsPayload:
         return mock_response
 
     @pytest.mark.asyncio
-    async def test_spend_logs_payload_success_log_with_api_base(self):
+    async def test_spend_logs_payload_success_log_with_api_base(self, monkeypatch):
         from litellm.llms.custom_httpx.http_handler import AsyncHTTPHandler
 
         litellm.callbacks = [_ProxyDBLogger(message_logging=False)]
@@ -509,7 +515,8 @@ class TestSpendLogsPayload:
         client = AsyncHTTPHandler()
 
         with patch.object(
-            litellm.proxy.proxy_server, "_set_spend_logs_payload"
+            litellm.proxy.db.db_spend_update_writer.DBSpendUpdateWriter,
+            "_set_spend_logs_payload",
         ) as mock_client, patch.object(
             litellm.proxy.proxy_server, "prisma_client"
         ), patch.object(
@@ -604,7 +611,8 @@ class TestSpendLogsPayload:
         )
 
         with patch.object(
-            litellm.proxy.proxy_server, "_set_spend_logs_payload"
+            litellm.proxy.db.db_spend_update_writer.DBSpendUpdateWriter,
+            "_set_spend_logs_payload",
         ) as mock_client, patch.object(
             litellm.proxy.proxy_server, "prisma_client"
         ), patch.object(
